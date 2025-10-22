@@ -1,80 +1,94 @@
-"""
-EXPERIMENTO A:
-Comparativa de combinaciones Autoencoder + Manifold.
-"""
-
+import numpy as np
 import os
-from sklearn.manifold import TSNE, LocallyLinearEmbedding
+from sklearn.manifold import TSNE, LocallyLinearEmbedding as LLE
 from LinearAutoencoder import LinearAutoencoder
 from LinearSparseAutoencoder import LinearSparseAutoencoder
 from DenoisingSparseAutoencoder import DenoisingSparseAutoencoder
-from mixed_manifold_detector import load_csv
-from experiment_utils import evaluate_combination, save_results_to_csv
+# from IdentityAutoencoder import IdentityAutoencoder # <- ELIMINADO
+from experiments.experiment_utils import evaluate_combination, save_results_to_csv, load_data
+# Importar la configuración de los datasets
+from dataset_config import DATASETS, BASE_DATA_PATH
 
-# Carga de datos reducidos
-labels, train_data = load_csv("../data/MNIST/mnist_train.csv", sample_fraction=0.05)
-_, test_data = load_csv("../data/MNIST/mnist_test.csv", sample_fraction=0.05)
+# --- CONFIGURACIÓN DE EJECUCIÓN ---
+# Nota: La salida debería ir a una carpeta para organizarse mejor, por ejemplo, 'experiments/results'.
+# Aquí se usa 'results' como en tu ejemplo.
+OUTPUT_DIR = "results"
+OUTPUT_FILENAME = "exp_A_autoencoder_vs_manifold.csv"
+OUTPUT_PATH = os.path.join(OUTPUT_DIR, OUTPUT_FILENAME)
+EPOCHS = 50
+N_LLE_NEIGHBORS = 30
 
-# --- INICIO DE LA SOLUCIÓN ---
-
-# 1. Inferir la dimensión de entrada (input_dim) desde los datos de entrenamiento
-input_dim = train_data.shape[1]
-print(f"Detectada dimensión de entrada (input_dim): {input_dim}")
-
-# 2. Definir los parámetros base del Autoencoder, INCLUYENDO input_dim
-base_ae_params = {
-    "epochs": 30,
-    "batch_size": 64,
-    "input_dim": input_dim  # <--- AÑADIDO
-}
-
-# --- FIN DE LA SOLUCIÓN ---
+# Pasar la configuración consolidada a la función load_data
+DATASETS_CONFIG = {"BASE_DATA_PATH": BASE_DATA_PATH, "DATASETS": DATASETS}
 
 
-autoencoders = [LinearAutoencoder, LinearSparseAutoencoder, DenoisingSparseAutoencoder]
-manifolds = [TSNE, LocallyLinearEmbedding]
+def run_experiment_A():
+    all_results = []
 
-results = []
+    # Lista de Autoencoders, SÓLO incluyendo los tres modelos desarrollados
+    ae_classes = {
+        "Linear": LinearAutoencoder,
+        "Sparse": LinearSparseAutoencoder,
+        "DenoisingSparse": DenoisingSparseAutoencoder
+    }
+    manifold_classes = {
+        "TSNE": TSNE,
+        "LLE": LLE
+    }
 
-for ae_cls in autoencoders:
-    for m_cls in manifolds:
-        print(f"🔹 Probando combinación: {ae_cls.__name__} + {m_cls.__name__}")
-        metrics = evaluate_combination(
-            ae_cls, m_cls,
-            train_data=train_data,
-            test_data=test_data,
-            ae_params=base_ae_params  # <--- USAMOS LOS PARÁMETROS BASE COMPLETOS
-        )
-        results.append(metrics)
+    print("\n--- Ejecutando Experimento A: Comparativa General sobre Múltiples Datasets ---")
 
-# Añadimos comparación con manifold puro (sin autoencoder)
-for m_cls in manifolds:
-    print(f"🔹 Probando {m_cls.__name__} sin autoencoder")
+    # Bucle principal sobre la lista de datasets
+    for dataset_name in DATASETS:
+        print(f"\n==================== DATASET: {dataset_name} ====================")
 
-    # --- INICIO DE LA SOLUCIÓN (CASO PURO) ---
+        train_data = load_data(dataset_name, "train", DATASETS_CONFIG)
+        test_data = load_data(dataset_name, "test", DATASETS_CONFIG)
 
-    # 3. Corregir el 'dummy' autoencoder para que acepte input_dim
-    #    El lambda debe aceptar kwargs y pasarlos al constructor
-    #    Necesitamos instanciarlo (aunque con epochs=0) para que la interfaz funcione.
-    dummy_ae_cls = lambda **kwargs: LinearAutoencoder(
-        input_dim=kwargs.get('input_dim'),  # <--- Acepta input_dim
-        epochs=0
-    )
+        if train_data is None or test_data is None:
+            continue
 
-    # 4. Los parámetros para este caso también deben incluir input_dim
-    dummy_ae_params = {"epochs": 0, "input_dim": input_dim}
+        # El input_dim se extrae directamente de los datos cargados
+        INPUT_DIM = train_data.shape[1]
+        print(f"Usando INPUT_DIM={INPUT_DIM}")
 
-    metrics = evaluate_combination(
-        autoencoder_cls=dummy_ae_cls,  # <--- lambda corregido
-        manifold_cls=m_cls,
-        train_data=train_data,
-        test_data=test_data,
-        ae_params=dummy_ae_params  # <--- params corregidos
-    )
-    # --- FIN DE LA SOLUCIÓN (CASO PURO) ---
+        default_ae_params = {"input_dim": INPUT_DIM, "epochs": EPOCHS, "batch_size": 128}
 
-    metrics["autoencoder"] = "None"
-    results.append(metrics)
+        for ae_name, ae_cls in ae_classes.items():
+            ae_p = default_ae_params.copy()
 
-os.makedirs("results", exist_ok=True)
-save_results_to_csv(results, "results/exp_A_autoencoder_vs_manifold.csv")
+            # Lógica de asignación de hiperparámetros de regularización
+            if ae_name == "Sparse":
+                ae_p["lambda_sparse"] = 1e-3
+            elif ae_name == "DenoisingSparse":
+                ae_p["lambda_sparse"] = 1e-3
+                ae_p["noise_factor"] = 0.2
+
+            # Nota: 'Linear' (básico) usa solo los parámetros por defecto (input_dim, epochs, batch_size).
+
+            for m_name, m_cls in manifold_classes.items():
+
+                m_p = {"n_components": 2}
+                if m_name == "LLE":
+                    m_p["n_neighbors"] = N_LLE_NEIGHBORS
+
+                print(f"-> Combinación: AE={ae_name} | Manifold={m_name}")
+
+                metrics = evaluate_combination(
+                    autoencoder_cls=ae_cls,
+                    manifold_cls=m_cls,
+                    train_data=train_data,
+                    test_data=test_data,
+                    ae_params=ae_p,
+                    manifold_params=m_p,
+                    dataset_name=dataset_name
+                )
+                all_results.append(metrics)
+
+    save_results_to_csv(all_results, OUTPUT_PATH)
+
+
+if __name__ == '__main__':
+    # Asegurarse de que el directorio de resultados existe
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    run_experiment_A()
