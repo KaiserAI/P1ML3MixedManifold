@@ -3,13 +3,16 @@ import os
 from sklearn.manifold import TSNE, LocallyLinearEmbedding as LLE
 from LinearAutoencoder import LinearAutoencoder
 from experiments.experiment_utils import evaluate_combination, save_results_to_csv, load_data
-from dataset_config import DATASETS, BASE_DATA_PATH # Importar la configuración de los datasets
+from dataset_config import DATASETS, BASE_DATA_PATH  # Importar la configuración de los datasets
 
-# --- CONFIGURACIÓN DE EJECUCIÓN ---
+# --- CONFIGURACIÓN DE EJECUCIÓN ESPECÍFICA DEL EXPERIMENTO ---
 OUTPUT_DIR = "results"
 OUTPUT_FILENAME = "exp_C_hyperparams_manifold.csv"
-OUTPUT_PATH = os.path.join(OUTPUT_DIR, OUTPUT_FILENAME) # Rutas compatibles con el SO
+OUTPUT_PATH = os.path.join(OUTPUT_DIR, OUTPUT_FILENAME)  # Rutas compatibles con el SO
 EPOCHS = 50
+
+# NUEVO: Porcentaje de datos a usar para este experimento (0.0 a 1.0)
+SAMPLE_PERCENTAGE = 0.5
 
 # Parámetros a explorar para los Manifolds
 PERPLEXITY_VALUES = [5, 30, 50]
@@ -29,10 +32,12 @@ def run_experiment_C():
 
     # Bucle principal sobre la lista de datasets
     for dataset_name in DATASETS:
-        print(f"\n==================== DATASET: {dataset_name} ====================")
+        print(
+            f"\n==================== DATASET: {dataset_name} (Sampling: {SAMPLE_PERCENTAGE * 100:.1f}%) ====================")
 
-        train_data = load_data(dataset_name, "train", DATASETS_CONFIG)
-        test_data = load_data(dataset_name, "test", DATASETS_CONFIG)
+        # Carga de datos con porcentaje de muestreo
+        train_data = load_data(dataset_name, "train", DATASETS_CONFIG, sample_ratio=SAMPLE_PERCENTAGE)
+        test_data = load_data(dataset_name, "test", DATASETS_CONFIG, sample_ratio=SAMPLE_PERCENTAGE)
 
         if train_data is None or test_data is None:
             continue
@@ -41,6 +46,7 @@ def run_experiment_C():
         INPUT_DIM = train_data.shape[1]
         print(f"INPUT_DIM detectado: {INPUT_DIM}")
 
+        # Parámetros del AE fijo para este experimento
         default_ae_params = {"input_dim": INPUT_DIM, "epochs": EPOCHS, "batch_size": 128}
 
         # ----------------------------------------------------
@@ -50,7 +56,7 @@ def run_experiment_C():
         for perplexity in PERPLEXITY_VALUES:
             manifold_params = {"n_components": 2, "perplexity": perplexity}
 
-            print(f"-> Combinación: Manifold=TSNE | Perplexity={perplexity}")
+            print(f"-> Combinación: AE={ae_cls.__name__} | Manifold=TSNE | Perplexity={perplexity}")
             metrics = evaluate_combination(
                 autoencoder_cls=ae_cls,
                 manifold_cls=TSNE,
@@ -69,7 +75,7 @@ def run_experiment_C():
         for n_neighbors in N_NEIGHBORS_VALUES:
             manifold_params = {"n_components": 2, "n_neighbors": n_neighbors}
 
-            print(f"-> Combinación: Manifold=LLE | n_neighbors={n_neighbors}")
+            print(f"-> Combinación: AE={ae_cls.__name__} | Manifold=LLE | n_neighbors={n_neighbors}")
             metrics = evaluate_combination(
                 autoencoder_cls=ae_cls,
                 manifold_cls=LLE,
@@ -84,6 +90,7 @@ def run_experiment_C():
     # Guardar todos los resultados
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     save_results_to_csv(all_results, OUTPUT_PATH)
+
 
 if __name__ == '__main__':
     run_experiment_C()

@@ -6,17 +6,18 @@ import pandas as pd
 from sklearn.manifold import trustworthiness
 from MixedManifoldDetector import MixedManifoldDetector
 import os
-from torch.utils.data import DataLoader  # Se usa en Autoencoder, solo para mostrar las dependencias si se usa aquí
+from torch.utils.data import DataLoader
 
 
-# Función de Carga de Datos (implementada aquí para ser usada por todos los scripts)
-def load_data(dataset_name: str, file_type: str, datasets_config: dict) -> Optional[np.ndarray]:
+def load_data(dataset_name: str, file_type: str, datasets_config: dict, sample_ratio: float = 1.0) -> Optional[
+    np.ndarray]:
     """
-    Carga los datos desde un archivo CSV y detecta automáticamente la dimensión de entrada.
+    Carga los datos desde un archivo CSV, aplica muestreo y detecta automáticamente la dimensión de entrada.
     :param dataset_name: Nombre del dataset (e.g., 'MNIST').
     :param file_type: 'train' o 'test'.
     :param datasets_config: Diccionario con la configuración del dataset (BASE_DATA_PATH y DATASETS).
-    :return: Matriz de numpy con los datos normalizados, o None si el archivo no existe.
+    :param sample_ratio: Porcentaje de datos a usar (0.0 a 1.0).
+    :return: Matriz de numpy con los datos normalizados y muestreados, o None si el archivo no existe.
     """
     ds_info = datasets_config["DATASETS"].get(dataset_name)
     base_path = datasets_config["BASE_DATA_PATH"]
@@ -26,14 +27,21 @@ def load_data(dataset_name: str, file_type: str, datasets_config: dict) -> Optio
         return None
 
     file_name = ds_info[f"{file_type}_file"]
+    has_header = ds_info.get("has_header", False)  # Por defecto, sin header
 
     # Construcción de la ruta independiente del SO: BASE_DATA_PATH/DATASET_NAME/FILE_NAME
     full_path = os.path.join(base_path, dataset_name, file_name)
 
     print(f"Cargando {file_type} data desde: {full_path}...")
     try:
-        # Cargamos el CSV. Asumimos que la primera columna es la etiqueta (y se excluye).
-        df = pd.read_csv(full_path, header=None)
+        # Cargamos el CSV según la configuración del dataset
+        if has_header:
+            df = pd.read_csv(full_path, header=0)
+            print(f"  -> Archivo con cabecera (header=0)")
+        else:
+            df = pd.read_csv(full_path, header=None)
+            print(f"  -> Archivo sin cabecera (header=None)")
+        
         # Excluir la primera columna (etiqueta) y obtener los valores
         data = df.iloc[:, 1:].values.astype(np.float32)
 
@@ -41,8 +49,17 @@ def load_data(dataset_name: str, file_type: str, datasets_config: dict) -> Optio
         if data.max() > 1.0:
             data /= 255.0
 
-        # El input_dim es data.shape[1]
-        print(f"Datos cargados (Shape: {data.shape}, Input_dim detectado: {data.shape[1]})")
+        # --- Lógica de MUESTREO (Sampling) ---
+        if sample_ratio < 1.0:
+            total_samples = data.shape[0]
+            num_samples = int(total_samples * sample_ratio)
+
+            # Muestreo aleatorio sin reemplazo (sin repetición)
+            indices = np.random.choice(total_samples, size=num_samples, replace=False)
+            data = data[indices]
+            print(f"Muestreo aplicado: {sample_ratio * 100:.1f}%. Usando {num_samples} muestras de {total_samples}.")
+
+        print(f"Datos cargados (Shape: {data.shape})")
         return data
 
     except FileNotFoundError:
@@ -56,7 +73,7 @@ def evaluate_combination(autoencoder_cls, manifold_cls, train_data, test_data=No
     manifold_params = manifold_params or {}
     input_dim = train_data.shape[1] if train_data is not None else 0
 
-    # LÍNEA CORREGIDA: Se usa 'autoencoder_cls' en lugar de 'ae_cls'
+    # Esto asegura que INPUT_DIM se pase al constructor del Autoencoder si es necesario
     if 'input_dim' not in ae_params and autoencoder_cls.__name__ not in ["IdentityAutoencoder"]:
         ae_params['input_dim'] = input_dim
 

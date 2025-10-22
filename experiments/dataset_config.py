@@ -12,10 +12,12 @@ BASE_DATA_PATH = os.path.join(CURRENT_DIR, "..", "data")
 DATASETS = {
     "MNIST": {
         "train_file": "mnist_train.csv",
-        "test_file": "mnist_test.csv"
+        "test_file": "mnist_test.csv",
+        "has_header": False
     },
     "FashionMNIST": {
         "train_file": "fashion_mnist_train.csv",
-        "test_file": "fashion_mnist_test.csv"
-    }
+        "test_file": "fashion_mnist_test.csv",
+        "has_header": True
+    },
 }

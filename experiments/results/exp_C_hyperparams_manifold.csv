@@ -1,14 +1,13 @@
-autoencoder,manifold,time_fit,trustworthiness_train,trustworthiness_test,n_components,perplexity,learning_rate,random_state,n_neighbors
-LinearAutoencoder,TSNE,5.652003288269043,0.9752375383928072,0.8875521155830753,2,10.0,100.0,42.0,
-LinearAutoencoder,TSNE,5.120225191116333,0.9749636678393924,0.8864045407636739,2,10.0,200.0,42.0,
-LinearAutoencoder,TSNE,5.332376480102539,0.9735969174066008,0.8696338493292054,2,10.0,500.0,42.0,
-LinearAutoencoder,TSNE,5.444942951202393,0.9728528843469034,0.8726968008255934,2,30.0,100.0,42.0,
-LinearAutoencoder,TSNE,5.706462860107422,0.9743795945719551,0.8842130030959752,2,30.0,200.0,42.0,
-LinearAutoencoder,TSNE,5.637886047363281,0.9741036242810074,0.8655975232198142,2,30.0,500.0,42.0,
-LinearAutoencoder,TSNE,6.05672550201416,0.9724566370693025,0.8843744066047472,2,50.0,100.0,42.0,
-LinearAutoencoder,TSNE,6.83649206161499,0.9702040766180823,0.8553349845201238,2,50.0,200.0,42.0,
-LinearAutoencoder,TSNE,6.272441625595093,0.9732335064499916,0.8569089783281734,2,50.0,500.0,42.0,
-LinearAutoencoder,LocallyLinearEmbedding,2.487344980239868,0.8115831015803876,0.806772342621259,2,,,,5.0
-LinearAutoencoder,LocallyLinearEmbedding,2.9967994689941406,0.735677522756464,0.7664008255933952,2,,,,10.0
-LinearAutoencoder,LocallyLinearEmbedding,3.553480863571167,0.6016296532082426,0.6405828689370485,2,,,,20.0
-LinearAutoencoder,LocallyLinearEmbedding,4.157386302947998,0.657209504662981,0.6861316821465429,2,,,,50.0
+dataset,autoencoder,manifold,ae_params,manifold_params,time_fit_s,time_transform_s,trustworthiness_train,trustworthiness_test
+MNIST,LinearAutoencoder,TSNE,"{'input_dim': 784, 'epochs': 50, 'batch_size': 128}","{'n_components': 2, 'perplexity': 5}",59.5262713432312,8.563620805740356,0.9891421478875196,0.9081311906911426
+MNIST,LinearAutoencoder,TSNE,"{'input_dim': 784, 'epochs': 50, 'batch_size': 128}","{'n_components': 2, 'perplexity': 30}",71.02011299133301,8.541806936264038,0.9911723427104003,0.9221321015146955
+MNIST,LinearAutoencoder,TSNE,"{'input_dim': 784, 'epochs': 50, 'batch_size': 128}","{'n_components': 2, 'perplexity': 50}",82.26471257209778,8.577290058135986,0.9900599735418856,0.9165424977430033
+MNIST,LinearAutoencoder,LocallyLinearEmbedding,"{'input_dim': 784, 'epochs': 50, 'batch_size': 128}","{'n_components': 2, 'n_neighbors': 10}",487.5871675014496,8.319670915603638,0.8190544901532458,0.8310965673588123
+MNIST,LinearAutoencoder,LocallyLinearEmbedding,"{'input_dim': 784, 'epochs': 50, 'batch_size': 128}","{'n_components': 2, 'n_neighbors': 30}",958.013918876648,8.33921480178833,0.5916104429510802,0.6173814023472766
+MNIST,LinearAutoencoder,LocallyLinearEmbedding,"{'input_dim': 784, 'epochs': 50, 'batch_size': 128}","{'n_components': 2, 'n_neighbors': 50}",1047.731124639511,8.009762048721313,0.6224411524843392,0.6572594884140837
+FashionMNIST,LinearAutoencoder,TSNE,"{'input_dim': 784, 'epochs': 50, 'batch_size': 128}","{'n_components': 2, 'perplexity': 5}",59.78549075126648,7.826848030090332,0.9908192874096061,0.9545568783228007
+FashionMNIST,LinearAutoencoder,TSNE,"{'input_dim': 784, 'epochs': 50, 'batch_size': 128}","{'n_components': 2, 'perplexity': 30}",67.5003273487091,8.168994426727295,0.9922807707315446,0.9624465964489919
+FashionMNIST,LinearAutoencoder,TSNE,"{'input_dim': 784, 'epochs': 50, 'batch_size': 128}","{'n_components': 2, 'perplexity': 50}",72.93680381774902,8.9912428855896,0.9921288434580089,0.9634975303440666
+FashionMNIST,LinearAutoencoder,LocallyLinearEmbedding,"{'input_dim': 784, 'epochs': 50, 'batch_size': 128}","{'n_components': 2, 'n_neighbors': 10}",75.49448990821838,7.950422286987305,0.8961761013190148,0.8839883438659846
+FashionMNIST,LinearAutoencoder,LocallyLinearEmbedding,"{'input_dim': 784, 'epochs': 50, 'batch_size': 128}","{'n_components': 2, 'n_neighbors': 30}",136.65546870231628,8.330640077590942,0.6738415265665039,0.7146664379576688
+FashionMNIST,LinearAutoencoder,LocallyLinearEmbedding,"{'input_dim': 784, 'epochs': 50, 'batch_size': 128}","{'n_components': 2, 'n_neighbors': 50}",268.3220639228821,7.8601579666137695,0.810649538039098,0.8296515959474371
