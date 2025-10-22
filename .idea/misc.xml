@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Black">
+    <option name="sdkName" value="P1ML3MixedManifold" />
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="P1ML3MixedManifold" project-jdk-type="Python SDK" />
+</project>
