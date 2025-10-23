@@ -20,4 +20,14 @@ DATASETS = {
         "test_file": "fashion_mnist_test.csv",
         "has_header": True
     },
+    "Cifar10": {
+        "train_file": "cifar10_train.csv",
+        "test_file": "cifar10_test.csv",
+        "has_header": False
+    },
+    "GlassIdentification": {
+        "train_file": "glass_train.csv",
+        "test_file": "glass_test.csv",
+        "has_header": False
+    }
 }
