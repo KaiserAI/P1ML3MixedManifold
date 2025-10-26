@@ -18,6 +18,9 @@ Entonces creo que tendría más sentido hacer el B y el C primero y con esos val
 - Resultados.
 - Conclusiones.
 
+
+lle no se le puede meter mini batch y mi ram no es suficiente, solo puedo entrenar con pocos datos del data set, puedo probar a que en el modelo final no usar lle y ver que tanto lo mejora. 
+
 justificar las 50 épocas de entreno con estos valores:
 /home/walter/anaconda3/envs/P1ML3MixedManifold/bin/python /home/walter/Uni/ML3/Practicas/P1ML3MixedManifold/experiments/exp_C_hyperparams_manifold.py 
 

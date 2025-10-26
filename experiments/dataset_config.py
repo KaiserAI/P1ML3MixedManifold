@@ -13,7 +13,7 @@ DATASETS = {
     "MNIST": {
         "train_file": "mnist_train.csv",
         "test_file": "mnist_test.csv",
-        "has_header": False
+        "has_header": True
     },
     "FashionMNIST": {
         "train_file": "fashion_mnist_train.csv",
@@ -23,7 +23,7 @@ DATASETS = {
     "Cifar10": {
         "train_file": "cifar10_train.csv",
         "test_file": "cifar10_test.csv",
-        "has_header": False
+        "has_header": True
     },
     "GlassIdentification": {
         "train_file": "glass_train.csv",

@@ -3,8 +3,9 @@ import os
 from sklearn.manifold import TSNE
 from LinearSparseAutoencoder import LinearSparseAutoencoder
 from DenoisingSparseAutoencoder import DenoisingSparseAutoencoder
-from experiments.experiment_utils import evaluate_combination, save_results_to_csv, load_data
-from dataset_config import DATASETS, BASE_DATA_PATH  # Importar la configuración de los datasets
+from experiments.experiment_utils import evaluate_combination, save_results_to_csv, load_data, load_labels
+import matplotlib.pyplot as plt
+from dataset_config import DATASETS, BASE_DATA_PATH
 
 # --- CONFIGURACIÓN DE EJECUCIÓN ESPECÍFICA DEL EXPERIMENTO ---
 OUTPUT_DIR = "results"
@@ -12,6 +13,7 @@ OUTPUT_FILENAME = "exp_B_hyperparams_autoencoder.csv"
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, OUTPUT_FILENAME)  # Rutas compatibles con el SO
 EPOCHS = 50
 DEFAULT_PERPLEXITY = 30  # TSNE fijo
+PLOTS_DIR = "plots/exp_B"  # NUEVA CONSTANTE: Directorio para guardar las imágenes
 
 # NUEVO: Porcentaje de datos a usar para este experimento (0.0 a 1.0)
 SAMPLE_PERCENTAGE = 0.5
@@ -24,23 +26,80 @@ NOISE_FACTORS = [0.1, 0.3, 0.5]
 DATASETS_CONFIG = {"BASE_DATA_PATH": BASE_DATA_PATH, "DATASETS": DATASETS}
 
 
+# --- NUEVA FUNCIÓN DE UTILIDAD PARA PLOTEAR ---
+def plot_2d_representation(embedding_2d: np.ndarray, labels: np.ndarray, dataset_name: str,
+                           autoencoder_name: str, ae_params: dict, manifold_name: str, plot_dir: str):
+    """Genera y guarda un gráfico de dispersión (scatter plot) 2D."""
+
+    # Crea el subdirectorio para el dataset si no existe
+    dataset_plot_dir = os.path.join(plot_dir, dataset_name)
+    os.makedirs(dataset_plot_dir, exist_ok=True)
+
+    # 1. Título y nombre del archivo
+    ae_param_str = ", ".join([f"{k}:{v}" for k, v in ae_params.items()])
+    title = f"{dataset_name} | AE: {autoencoder_name} | Manifold: {manifold_name}\nAE Params: {ae_param_str}"
+
+    # Generar un nombre de archivo limpio y único
+    safe_ae_name = autoencoder_name.replace("Autoencoder", "AE")
+    safe_params = ae_param_str.replace(":", "_").replace(", ", "_").replace(" ", "").replace("{", "").replace("}", "")
+
+    filename = f"{dataset_name}_{safe_ae_name}_{manifold_name}_{safe_params}.png"
+    output_path = os.path.join(dataset_plot_dir, filename)
+
+    # 2. Generación del gráfico
+    plt.figure(figsize=(10, 8))
+
+    # Usa 'c' (color) para mapear los puntos a colores basados en la etiqueta
+    # Se recomienda el mapa de colores 'Spectral' o 'viridis' para datos categóricos
+    scatter = plt.scatter(embedding_2d[:, 0], embedding_2d[:, 1],
+                          c=labels, cmap='Spectral', s=10, alpha=0.7)
+
+    # Añadir leyenda de colores
+    unique_labels = np.unique(labels)
+    if len(unique_labels) > 1 and len(unique_labels) <= 20:
+        cbar = plt.colorbar(scatter, ticks=unique_labels)
+        cbar.set_label('Clase / Etiqueta', rotation=270, labelpad=15)
+
+    plt.title(title)
+    plt.xlabel('Componente 1 (x)')
+    plt.ylabel('Componente 2 (y)')
+    plt.grid(True, linestyle='--', alpha=0.5)
+
+    # 3. Guardar gráfico
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"   -> Imagen guardada en: {output_path}")
+
+
 def run_experiment_B():
     all_results = []
 
     # Manifold fijo (TSNE)
     manifold_cls = TSNE
+    manifold_name = "TSNE"
     manifold_params = {"n_components": 2, "perplexity": DEFAULT_PERPLEXITY}
 
     print("\n--- Ejecutando Experimento B: Hiperparámetros del Autoencoder ---")
+
+    # Crear el directorio base para los plots
+    os.makedirs(PLOTS_DIR, exist_ok=True)
 
     # Bucle principal sobre la lista de datasets
     for dataset_name in DATASETS:
         print(
             f"\n==================== DATASET: {dataset_name} (Sampling: {SAMPLE_PERCENTAGE * 100:.1f}%) ====================")
 
-        # Carga de datos con porcentaje de muestreo
+        # Carga de datos de entrenamiento (solo features)
         train_data = load_data(dataset_name, "train", DATASETS_CONFIG, sample_ratio=SAMPLE_PERCENTAGE)
         test_data = load_data(dataset_name, "test", DATASETS_CONFIG, sample_ratio=SAMPLE_PERCENTAGE)
+
+        # Carga de etiquetas (asumiendo que es una nueva función en experiment_utils)
+        try:
+            train_labels = load_labels(dataset_name, "train", DATASETS_CONFIG, sample_ratio=SAMPLE_PERCENTAGE)
+        except NameError:
+            # En caso de no existir, se usa un array de ceros para no fallar, pero la gráfica no tendrá colores correctos
+            print("AVISO: No se encontró la función 'load_labels'. No se generarán gráficos con etiquetas de color.")
+            train_labels = np.zeros(train_data.shape[0])
 
         if train_data is None or test_data is None:
             continue
@@ -58,10 +117,14 @@ def run_experiment_B():
         for lambda_sparse in LAMBDA_VALUES:
             ae_params = default_ae_params.copy()
             ae_params["lambda_sparse"] = lambda_sparse
+            autoencoder_cls = LinearSparseAutoencoder
+            autoencoder_name = "LinearSparseAutoencoder"
 
             print(f"-> Combinación: AE=Sparse | lambda={lambda_sparse}")
-            metrics = evaluate_combination(
-                autoencoder_cls=LinearSparseAutoencoder,
+
+            # ATENCIÓN: Se asume que evaluate_combination ahora devuelve una tupla de (metrics, train_embedding_2d)
+            metrics, train_embedding_2d = evaluate_combination(
+                autoencoder_cls=autoencoder_cls,
                 manifold_cls=manifold_cls,
                 train_data=train_data,
                 test_data=test_data,
@@ -70,6 +133,17 @@ def run_experiment_B():
                 dataset_name=dataset_name
             )
             all_results.append(metrics)
+
+            # NUEVO: Generar y guardar la imagen
+            plot_2d_representation(
+                embedding_2d=train_embedding_2d,
+                labels=train_labels,
+                dataset_name=dataset_name,
+                autoencoder_name=autoencoder_name,
+                ae_params=ae_params,
+                manifold_name=manifold_name,
+                plot_dir=PLOTS_DIR
+            )
 
         # ----------------------------------------------------
         # 2. Hiperparámetros de Ruido (DenoisingSparse, noise_factor)
@@ -79,10 +153,14 @@ def run_experiment_B():
             ae_params = default_ae_params.copy()
             ae_params["lambda_sparse"] = 1e-3  # Fijo
             ae_params["noise_factor"] = noise_factor
+            autoencoder_cls = DenoisingSparseAutoencoder
+            autoencoder_name = "DenoisingSparseAutoencoder"
 
             print(f"-> Combinación: AE=DenoisingSparse | noise={noise_factor}")
-            metrics = evaluate_combination(
-                autoencoder_cls=DenoisingSparseAutoencoder,
+
+            # ATENCIÓN: Se asume que evaluate_combination ahora devuelve una tupla de (metrics, train_embedding_2d)
+            metrics, train_embedding_2d = evaluate_combination(
+                autoencoder_cls=autoencoder_cls,
                 manifold_cls=manifold_cls,
                 train_data=train_data,
                 test_data=test_data,
@@ -91,6 +169,17 @@ def run_experiment_B():
                 dataset_name=dataset_name
             )
             all_results.append(metrics)
+
+            # NUEVO: Generar y guardar la imagen
+            plot_2d_representation(
+                embedding_2d=train_embedding_2d,
+                labels=train_labels,
+                dataset_name=dataset_name,
+                autoencoder_name=autoencoder_name,
+                ae_params=ae_params,
+                manifold_name=manifold_name,
+                plot_dir=PLOTS_DIR
+            )
 
     # Guardar todos los resultados
     os.makedirs(OUTPUT_DIR, exist_ok=True)
