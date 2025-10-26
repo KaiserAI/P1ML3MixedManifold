@@ -1,22 +1,7 @@
-Bottleneck @ file:///croot/bottleneck_1731058641041/work
-contourpy @ file:///croot/contourpy_1732540045555/work
-cycler @ file:///tmp/build/80754af9/cycler_1637851556182/work
 filelock==3.20.0
-fonttools @ file:///home/task_175975467226191/conda-bld/fonttools_1759754871865/work
-fsspec @ file:///croot/fsspec_1753796001797/work
-gmpy2 @ file:///croot/gmpy2_1738085463648/work
-importlib_metadata @ file:///croot/importlib_metadata-suite_1732633488278/work
-Jinja2 @ file:///croot/jinja2_1741710844255/work
-joblib @ file:///home/task_175792628649810/conda-bld/joblib_1757926345604/work
-kiwisolver @ file:///croot/kiwisolver_1737039087198/work
-lit @ file:///croot/llvm-package_1756220453855/work/llvm/utils/lit
 MarkupSafe==3.0.3
 matplotlib==3.10.6
 mkl-service==2.5.2
-mpmath @ file:///work/perseverance-python-buildout/croot/mpmath_1698864994882/work
-networkx @ file:///croot/networkx_1756709277056/work
-numexpr @ file:///croot/numexpr_1755766469354/work
-numpy @ file:///home/task_176054730709927/conda-bld/numpy_and_numpy_base_1760547736425/work/dist/numpy-2.3.3-cp312-cp312-linux_x86_64.whl#sha256=1b0a61c4457c1c64fb8215f7b4aa6fb468d7caf633f16d3d1a9c03e388add03b
 nvidia-cublas-cu12==12.8.4.1
 nvidia-cuda-cupti-cu12==12.8.90
 nvidia-cuda-nvrtc-cu12==12.8.93

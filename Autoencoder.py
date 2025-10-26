@@ -46,10 +46,8 @@ class Autoencoder(object):
         self.learning_rate = learning_rate
         self.embedding_dim = embedding_dim
 
-        # --- INICIO DE LA SOLUCIÓN (1/3) ---
         # Definir el dispositivo (CPU o GPU) en la clase base
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # --- FIN DE LA SOLUCIÓN (1/3) ---
 
         self.model: Optional[nn.Module] = None  # Almacena el objeto torch.nn.Module
         self.encoder: Optional[nn.Sequential] = None  # Almacena solo el encoder para 'transform'
@@ -64,12 +62,10 @@ class Autoencoder(object):
         if self.model is None:
             raise NotImplementedError("El modelo (self.model) debe ser definido en la subclase.")
 
-        # --- INICIO DE LA SOLUCIÓN (2/3) ---
         # Mover el modelo al dispositivo correcto ANTES de crear el optimizador
         self.model.to(self.device)
-        # --- FIN DE LA SOLUCIÓN (2/3) ---
 
-        # Configuración estándar: MSELoss y Adam (ambos son opcionales pero se usan comúnmente)
+        # Configuración estándar: MSELoss y Adam
         criterion = nn.MSELoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
@@ -78,16 +74,13 @@ class Autoencoder(object):
         dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
         self.model.train()
-        # (Opcional) Informar al usuario qué dispositivo se está usando
         print(f"Iniciando entrenamiento en {self.device} por {self.epochs} épocas...")
 
         for epoch in range(self.epochs):
             total_loss = 0
             for inputs, targets in dataloader:
-                # --- INICIO DE LA SOLUCIÓN (2/3) ---
                 # Mover los datos del batch al dispositivo correcto
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
-                # --- FIN DE LA SOLUCIÓN (2/3) ---
 
                 # Forward pass
                 outputs = self.model(inputs)
@@ -123,18 +116,14 @@ class Autoencoder(object):
         if self.encoder is None:
             raise NotImplementedError("El encoder (self.encoder) debe ser definido en la subclase.")
 
-        # --- INICIO DE LA SOLUCIÓN (3/3) ---
         # Asegurarse de que el encoder está en el dispositivo correcto
         self.encoder.to(self.device)
-        # --- FIN DE LA SOLUCIÓN (3/3) ---
         self.encoder.eval()  # Asegurar que el encoder está en modo evaluación
 
         # Preparación de datos para la inferencia
         with torch.no_grad():
-            # --- INICIO DE LA SOLUCIÓN (3/3) ---
             # Crear el tensor y MOVERLO al dispositivo correcto
             tensor_data = torch.from_numpy(data).float().to(self.device)
-            # --- FIN DE LA SOLUCIÓN (3/3) ---
 
             # Asegurar que el encoder solo procesa un batch a la vez, si es necesario.
             # Aquí se procesa todo el tensor directamente para simplicidad.

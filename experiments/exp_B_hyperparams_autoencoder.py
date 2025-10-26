@@ -14,7 +14,7 @@ EPOCHS = 50
 DEFAULT_PERPLEXITY = 30  # TSNE fijo
 
 # NUEVO: Porcentaje de datos a usar para este experimento (0.0 a 1.0)
-SAMPLE_PERCENTAGE = 0.1
+SAMPLE_PERCENTAGE = 0.5
 
 # Parámetros a explorar para los Autoencoders
 LAMBDA_VALUES = [1e-4, 1e-3, 1e-2]

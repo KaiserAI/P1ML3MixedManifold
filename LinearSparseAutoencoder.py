@@ -2,18 +2,12 @@ import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-# Importamos la clase base y el dataset personalizado
 from Autoencoder import Autoencoder, NumpyDataset
 
 
-# La clase ahora hereda de Autoencoder
 class LinearSparseAutoencoder(Autoencoder):
     """
     Autoencoder lineal con regularización Sparse.
-    Cumple la interfaz Autoencoder exigida en la práctica:
-        - __init__(epochs, error_threshold, batch_size)
-        - fit(data)
-        - transform(data)
     """
 
     def __init__(self, input_dim: int, epochs: int = 100, error_threshold: float = 0.0, batch_size: int = 64,
@@ -30,20 +24,12 @@ class LinearSparseAutoencoder(Autoencoder):
         - lambda_sparse: peso del término de regularización L1 sobre el embedding.
         - embedding_dim: tamaño de la capa latente (por defecto 32).
         """
-        # Llamamos al constructor de la clase base
-        # Nota: Pasamos 'lr' como 'learning_rate' a la clase base
         super().__init__(epochs=epochs, error_threshold=error_threshold, batch_size=batch_size,
                          learning_rate=lr, embedding_dim=embedding_dim, **kwargs)
 
         # Parámetros específicos de esta subclase
         self.lambda_sparse = lambda_sparse
 
-        # --- INICIO DE LA SOLUCIÓN ---
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # <-- ESTA LÍNEA SE ELIMINA (se hereda de Autoencoder)
-        # --- FIN DE LA SOLUCIÓN ---
-
-        # La lógica de _build_model se mueve aquí, al constructor
-        # para definir self.model y self.encoder como espera la clase base.
 
         class SparseAutoencoderModel(nn.Module):
             def __init__(self, input_dim, embedding_dim):
@@ -71,10 +57,8 @@ class LinearSparseAutoencoder(Autoencoder):
                 return x_rec, z
 
         # Definimos self.model y self.encoder
-        # Usamos self.device (heredado) para mover el modelo
         self.model = SparseAutoencoderModel(input_dim, self.embedding_dim).to(self.device)
         self.encoder = self.model.encoder
-        # self.is_fitted será establecido por fit()
 
     def fit(self, data: np.ndarray):
         """
@@ -86,16 +70,13 @@ class LinearSparseAutoencoder(Autoencoder):
             raise ValueError(
                 f"La dimensión de entrada de los datos ({data.shape[1]}) no coincide con la del modelo ({self.model.decoder[-1].out_features}).")
 
-        # Usamos el NumpyDataset de la clase base
         dataset = NumpyDataset(data)
-        # Usamos el self.batch_size de la clase base
         loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
-        # Usamos self.learning_rate de la clase base (que se asignó desde 'lr')
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         loss_fn = nn.MSELoss()
 
-        # Mover el modelo al dispositivo (ya se hizo en __init__, pero no hace daño)
+        # Mover el modelo al dispositivo
         self.model.to(self.device)
         self.model.train()
         print(f"Iniciando entrenamiento (LinearSparse) en {self.device} por {self.epochs} épocas...")
@@ -132,8 +113,3 @@ class LinearSparseAutoencoder(Autoencoder):
         # Establecemos los flags de la clase base al finalizar
         self.is_fitted = True
         self.model.eval()
-
-    # El método 'transform' ya no es necesario.
-    # Se utilizará el de la clase base 'Autoencoder',
-    # que funciona gracias a que 'self.encoder' y 'self.is_fitted'
-    # se han definido correctamente.

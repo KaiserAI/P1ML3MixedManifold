@@ -2,18 +2,12 @@ import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-# Importamos la clase base y el dataset personalizado
 from Autoencoder import Autoencoder, NumpyDataset
 
 
-# La clase ahora hereda de Autoencoder
 class DenoisingSparseAutoencoder(Autoencoder):
     """
     Autoencoder lineal con regularización Denoising + Sparse.
-    Cumple la interfaz Autoencoder exigida en la práctica:
-        - __init__(epochs, error_threshold, batch_size)
-        - fit(data)
-        - transform(data)
     """
 
     def __init__(self, input_dim: int, epochs: int = 100, error_threshold: float = 0.0, batch_size: int = 64,
@@ -41,12 +35,6 @@ class DenoisingSparseAutoencoder(Autoencoder):
         self.lambda_sparse = lambda_sparse
         self.noise_factor = noise_factor
 
-        # --- INICIO DE LA SOLUCIÓN ---
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # <-- ESTA LÍNEA SE ELIMINA (se hereda de Autoencoder)
-        # --- FIN DE LA SOLUCIÓN ---
-
-        # La lógica de _build_model se mueve aquí, al constructor
-        # para definir self.model y self.encoder como espera la clase base.
 
         class DenoisingSparseModel(nn.Module):
             def __init__(self, input_dim, embedding_dim):
@@ -100,16 +88,13 @@ class DenoisingSparseAutoencoder(Autoencoder):
             raise ValueError(
                 f"La dimensión de entrada de los datos ({data.shape[1]}) no coincide con la del modelo ({self.model.decoder[-1].out_features}).")
 
-        # Usamos el NumpyDataset de la clase base
         dataset = NumpyDataset(data)
-        # Usamos el self.batch_size de la clase base
         loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
-        # Usamos self.learning_rate de la clase base (que se asignó desde 'lr')
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         loss_fn = nn.MSELoss()
 
-        # Mover el modelo al dispositivo (ya se hizo en __init__, pero no hace daño)
+        # Mover el modelo al dispositivo
         self.model.to(self.device)
         self.model.train()
         print(f"Iniciando entrenamiento (DenoisingSparse) en {self.device} por {self.epochs} épocas...")
@@ -145,7 +130,6 @@ class DenoisingSparseAutoencoder(Autoencoder):
             mean_loss = epoch_loss / len(dataset)
             print(f"Epoch {epoch:03d}/{self.epochs} - Loss: {mean_loss:.6f}")
 
-            # Usamos self.error_threshold de la clase base
             if self.error_threshold > 0 and mean_loss <= self.error_threshold:
                 print(f"✅ Early stopping: error {mean_loss:.6f} <= {self.error_threshold}")
                 break
@@ -153,8 +137,3 @@ class DenoisingSparseAutoencoder(Autoencoder):
         # Establecemos los flags de la clase base al finalizar
         self.is_fitted = True
         self.model.eval()
-
-    # El método 'transform' ya no es necesario.
-    # Se utilizará el de la clase base 'Autoencoder',
-    # que funciona gracias a que 'self.encoder' y 'self.is_fitted'
-    # se han definido correctamente.

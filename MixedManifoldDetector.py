@@ -1,6 +1,5 @@
 import numpy as np
 from sklearn.manifold import TSNE
-from sklearn.metrics import pairwise_distances
 from sklearn.base import TransformerMixin
 from LinearAutoencoder import LinearAutoencoder
 
