@@ -13,10 +13,8 @@ OUTPUT_FILENAME = "exp_B_hyperparams_autoencoder.csv"
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, OUTPUT_FILENAME)  # Rutas compatibles con el SO
 EPOCHS = 50
 DEFAULT_PERPLEXITY = 30  # TSNE fijo
-PLOTS_DIR = "plots/exp_B"  # NUEVA CONSTANTE: Directorio para guardar las imágenes
+PLOTS_DIR = "plots/exp_B"  # Directorio para guardar las imágenes
 
-# NUEVO: Porcentaje de datos a usar para este experimento (0.0 a 1.0)
-SAMPLE_PERCENTAGE = 0.5
 
 # Parámetros a explorar para los Autoencoders
 LAMBDA_VALUES = [1e-4, 1e-3, 1e-2]
@@ -26,7 +24,7 @@ NOISE_FACTORS = [0.1, 0.3, 0.5]
 DATASETS_CONFIG = {"BASE_DATA_PATH": BASE_DATA_PATH, "DATASETS": DATASETS}
 
 
-# --- NUEVA FUNCIÓN DE UTILIDAD PARA PLOTEAR ---
+# --- FUNCIÓN DE UTILIDAD PARA PLOTEAR ---
 def plot_2d_representation(embedding_2d: np.ndarray, labels: np.ndarray, dataset_name: str,
                            autoencoder_name: str, ae_params: dict, manifold_name: str, plot_dir: str):
     """Genera y guarda un gráfico de dispersión (scatter plot) 2D."""
@@ -36,7 +34,9 @@ def plot_2d_representation(embedding_2d: np.ndarray, labels: np.ndarray, dataset
     os.makedirs(dataset_plot_dir, exist_ok=True)
 
     # 1. Título y nombre del archivo
-    ae_param_str = ", ".join([f"{k}:{v}" for k, v in ae_params.items()])
+    # Filtramos los parámetros por defecto para hacer el título más limpio
+    ae_param_str = ", ".join(
+        [f"{k}:{v}" for k, v in ae_params.items() if k not in ['input_dim', 'epochs', 'batch_size']])
     title = f"{dataset_name} | AE: {autoencoder_name} | Manifold: {manifold_name}\nAE Params: {ae_param_str}"
 
     # Generar un nombre de archivo limpio y único
@@ -50,7 +50,6 @@ def plot_2d_representation(embedding_2d: np.ndarray, labels: np.ndarray, dataset
     plt.figure(figsize=(10, 8))
 
     # Usa 'c' (color) para mapear los puntos a colores basados en la etiqueta
-    # Se recomienda el mapa de colores 'Spectral' o 'viridis' para datos categóricos
     scatter = plt.scatter(embedding_2d[:, 0], embedding_2d[:, 1],
                           c=labels, cmap='Spectral', s=10, alpha=0.7)
 
@@ -85,21 +84,27 @@ def run_experiment_B():
     os.makedirs(PLOTS_DIR, exist_ok=True)
 
     # Bucle principal sobre la lista de datasets
-    for dataset_name in DATASETS:
+    for dataset_name, ds_info in DATASETS.items():
+
+        # 1. OBTENER EL SAMPLE RATIO ESPECÍFICO DEL DATASET
+        sample_ratio = ds_info.get("sample_ratio", 1.0)
+
         print(
-            f"\n==================== DATASET: {dataset_name} (Sampling: {SAMPLE_PERCENTAGE * 100:.1f}%) ====================")
+            f"\n==================== DATASET: {dataset_name} (Sampling: {sample_ratio * 100:.1f}%) ====================")
 
-        # Carga de datos de entrenamiento (solo features)
-        train_data = load_data(dataset_name, "train", DATASETS_CONFIG, sample_ratio=SAMPLE_PERCENTAGE)
-        test_data = load_data(dataset_name, "test", DATASETS_CONFIG, sample_ratio=SAMPLE_PERCENTAGE)
+        # Carga de datos con porcentaje de muestreo
+        train_data = load_data(dataset_name, "train", DATASETS_CONFIG, sample_ratio=sample_ratio)
+        test_data = load_data(dataset_name, "test", DATASETS_CONFIG, sample_ratio=sample_ratio)
 
-        # Carga de etiquetas (asumiendo que es una nueva función en experiment_utils)
+        # Carga de etiquetas
         try:
-            train_labels = load_labels(dataset_name, "train", DATASETS_CONFIG, sample_ratio=SAMPLE_PERCENTAGE)
+            train_labels = load_labels(dataset_name, "train", DATASETS_CONFIG, sample_ratio=sample_ratio)
         except NameError:
-            # En caso de no existir, se usa un array de ceros para no fallar, pero la gráfica no tendrá colores correctos
             print("AVISO: No se encontró la función 'load_labels'. No se generarán gráficos con etiquetas de color.")
-            train_labels = np.zeros(train_data.shape[0])
+            if train_data is not None:
+                train_labels = np.zeros(train_data.shape[0])
+            else:
+                continue
 
         if train_data is None or test_data is None:
             continue
@@ -122,7 +127,6 @@ def run_experiment_B():
 
             print(f"-> Combinación: AE=Sparse | lambda={lambda_sparse}")
 
-            # ATENCIÓN: Se asume que evaluate_combination ahora devuelve una tupla de (metrics, train_embedding_2d)
             metrics, train_embedding_2d = evaluate_combination(
                 autoencoder_cls=autoencoder_cls,
                 manifold_cls=manifold_cls,
@@ -134,7 +138,7 @@ def run_experiment_B():
             )
             all_results.append(metrics)
 
-            # NUEVO: Generar y guardar la imagen
+            # Generar y guardar la imagen
             plot_2d_representation(
                 embedding_2d=train_embedding_2d,
                 labels=train_labels,
@@ -158,7 +162,6 @@ def run_experiment_B():
 
             print(f"-> Combinación: AE=DenoisingSparse | noise={noise_factor}")
 
-            # ATENCIÓN: Se asume que evaluate_combination ahora devuelve una tupla de (metrics, train_embedding_2d)
             metrics, train_embedding_2d = evaluate_combination(
                 autoencoder_cls=autoencoder_cls,
                 manifold_cls=manifold_cls,
@@ -170,7 +173,7 @@ def run_experiment_B():
             )
             all_results.append(metrics)
 
-            # NUEVO: Generar y guardar la imagen
+            # Generar y guardar la imagen
             plot_2d_representation(
                 embedding_2d=train_embedding_2d,
                 labels=train_labels,

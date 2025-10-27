@@ -5,17 +5,15 @@ from LinearAutoencoder import LinearAutoencoder
 # Importamos load_labels y asumimos que evaluate_combination devuelve el embedding 2D
 from experiments.experiment_utils import evaluate_combination, save_results_to_csv, load_data, load_labels
 from dataset_config import DATASETS, BASE_DATA_PATH
-import matplotlib.pyplot as plt  # NUEVA IMPORTACIÓN PARA PLOTS
+import matplotlib.pyplot as plt
 
 # --- CONFIGURACIÓN DE EJECUCIÓN ESPECÍFICA DEL EXPERIMENTO ---
 OUTPUT_DIR = "results"
 OUTPUT_FILENAME = "exp_C_hyperparams_manifold.csv"
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, OUTPUT_FILENAME)  # Rutas compatibles con el SO
 EPOCHS = 50
-PLOTS_DIR = "plots/exp_C"  # NUEVA CONSTANTE: Directorio para guardar las imágenes
+PLOTS_DIR = "plots/exp_C"  # Directorio para guardar las imágenes
 
-# NUEVO: Porcentaje de datos a usar para este experimento (0.0 a 1.0)
-SAMPLE_PERCENTAGE = 0.5
 
 # Parámetros a explorar para los Manifolds
 PERPLEXITY_VALUES = [5, 30, 50]
@@ -25,7 +23,7 @@ N_NEIGHBORS_VALUES = [10, 30, 50]
 DATASETS_CONFIG = {"BASE_DATA_PATH": BASE_DATA_PATH, "DATASETS": DATASETS}
 
 
-# --- NUEVA FUNCIÓN DE UTILIDAD PARA PLOTEAR ---
+# --- FUNCIÓN DE UTILIDAD PARA PLOTEAR ---
 def plot_2d_representation(embedding_2d: np.ndarray, labels: np.ndarray, dataset_name: str,
                            autoencoder_name: str, ae_params: dict, manifold_name: str,
                            manifold_params: dict, plot_dir: str):
@@ -36,7 +34,6 @@ def plot_2d_representation(embedding_2d: np.ndarray, labels: np.ndarray, dataset
     os.makedirs(dataset_plot_dir, exist_ok=True)
 
     # 1. Título y nombre del archivo
-    # Usamos los parámetros clave del manifold, ya que el AE es fijo en este experimento
     manifold_param_str = ", ".join([f"{k}:{v}" for k, v in manifold_params.items()])
     title = f"{dataset_name} | AE: {autoencoder_name} | Manifold: {manifold_name}\nManifold Params: {manifold_param_str}"
 
@@ -86,20 +83,29 @@ def run_experiment_C():
     os.makedirs(PLOTS_DIR, exist_ok=True)
 
     # Bucle principal sobre la lista de datasets
-    for dataset_name in DATASETS:
-        print(
-            f"\n==================== DATASET: {dataset_name} (Sampling: {SAMPLE_PERCENTAGE * 100:.1f}%) ====================")
+    for dataset_name, ds_info in DATASETS.items():
 
-        # Carga de datos con porcentaje de muestreo
-        train_data = load_data(dataset_name, "train", DATASETS_CONFIG, sample_ratio=SAMPLE_PERCENTAGE)
-        test_data = load_data(dataset_name, "test", DATASETS_CONFIG, sample_ratio=SAMPLE_PERCENTAGE)
+        # 1. OBTENER EL SAMPLE RATIO ESPECÍFICO DEL DATASET
+        # Se usa 1.0 como valor por defecto si no está en la configuración
+        sample_ratio = ds_info.get("sample_ratio", 1.0)
+
+        print(
+            f"\n==================== DATASET: {dataset_name} (Sampling: {sample_ratio * 100:.1f}%) ====================")
+
+        # Carga de datos con el sample ratio específico
+        train_data = load_data(dataset_name, "train", DATASETS_CONFIG, sample_ratio=sample_ratio)
+        test_data = load_data(dataset_name, "test", DATASETS_CONFIG, sample_ratio=sample_ratio)
 
         # Carga de etiquetas
         try:
-            train_labels = load_labels(dataset_name, "train", DATASETS_CONFIG, sample_ratio=SAMPLE_PERCENTAGE)
+            train_labels = load_labels(dataset_name, "train", DATASETS_CONFIG, sample_ratio=sample_ratio)
         except NameError:
             print("AVISO: No se encontró la función 'load_labels'. No se generarán gráficos con etiquetas de color.")
-            train_labels = np.zeros(train_data.shape[0])
+            # Si train_data es None, esto fallará. Si no es None, usamos ceros.
+            if train_data is not None:
+                train_labels = np.zeros(train_data.shape[0])
+            else:
+                continue  # Si no hay datos, saltamos
 
         if train_data is None or test_data is None:
             continue
@@ -121,7 +127,6 @@ def run_experiment_C():
 
             print(f"-> Combinación: AE={ae_name} | Manifold={manifold_name} | Perplexity={perplexity}")
 
-            # ATENCIÓN: Se asume que evaluate_combination ahora devuelve una tupla de (metrics, train_embedding_2d)
             metrics, train_embedding_2d = evaluate_combination(
                 autoencoder_cls=ae_cls,
                 manifold_cls=TSNE,
@@ -133,7 +138,7 @@ def run_experiment_C():
             )
             all_results.append(metrics)
 
-            # NUEVO: Generar y guardar la imagen
+            # Generar y guardar la imagen
             plot_2d_representation(
                 embedding_2d=train_embedding_2d,
                 labels=train_labels,
@@ -155,7 +160,6 @@ def run_experiment_C():
 
             print(f"-> Combinación: AE={ae_name} | Manifold={manifold_name} | n_neighbors={n_neighbors}")
 
-            # ATENCIÓN: Se asume que evaluate_combination ahora devuelve una tupla de (metrics, train_embedding_2d)
             metrics, train_embedding_2d = evaluate_combination(
                 autoencoder_cls=ae_cls,
                 manifold_cls=LLE,
@@ -167,7 +171,7 @@ def run_experiment_C():
             )
             all_results.append(metrics)
 
-            # NUEVO: Generar y guardar la imagen
+            # Generar y guardar la imagen
             plot_2d_representation(
                 embedding_2d=train_embedding_2d,
                 labels=train_labels,
