@@ -20,8 +20,8 @@ EXP_C_PATH = os.path.join(SCRIPT_DIR, RESULTS_DIR, EXP_C_FILENAME)
 WEIGHTS = {
     "MNIST": 4,  # Máxima preferencia
     "FashionMNIST": 4,  # Máxima preferencia
-    "Cifar10": 2,  # Preferencia media
-    "GlassIdentification": 1  # Mínima preferencia
+    "Cifar10": 3,  # Preferencia media
+    "GlassIdentification": 2 # Mínima preferencia
 }
 TOTAL_WEIGHT = sum(WEIGHTS.values())
 

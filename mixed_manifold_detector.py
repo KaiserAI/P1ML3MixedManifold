@@ -71,7 +71,7 @@ def main():
     manifold = FINAL_MANIFOLD_CLASS(
         n_components=2,
         random_state=42,
-        perplexity=50
+        perplexity=30
     )
 
     detector = MixedManifoldDetector(autoencoder=autoencoder, manifold_alg=manifold)

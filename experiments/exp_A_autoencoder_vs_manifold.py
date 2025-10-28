@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 # --- PARÁMETROS GLOBALES ÓPTIMOS (Derivados del Análisis Ponderado) ---
 OPTIMAL_PARAMS_FOR_EXP_A = {
     'LinearSparseAutoencoder': {'lambda_sparse': 0.0001},
-    'DenoisingSparseAutoencoder': {'lambda_sparse': 0.001, 'noise_factor': 0.1},
-    'TSNE': {'perplexity': 50},
+    'DenoisingSparseAutoencoder': {'lambda_sparse': 0.001, 'noise_factor': 0.3},
+    'TSNE': {'perplexity': 30},
     'LLE': {'n_neighbors': 10},
 }
 # --- CONFIGURACIÓN DE EJECUCIÓN ESPECÍFICA DEL EXPERIMENTO ---

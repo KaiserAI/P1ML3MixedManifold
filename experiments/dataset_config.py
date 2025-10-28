@@ -14,24 +14,24 @@ DATASETS = {
         "train_file": "mnist_train.csv",
         "test_file": "mnist_test.csv",
         "has_header": True,
-        "sample_ratio": 0.5
+        "sample_ratio": 0.3
     },
     "FashionMNIST": {
         "train_file": "fashion_mnist_train.csv",
         "test_file": "fashion_mnist_test.csv",
         "has_header": True,
-        "sample_ratio": 0.5
+        "sample_ratio": 0.3
     },
     "Cifar10": {
         "train_file": "cifar10_train.csv",
         "test_file": "cifar10_test.csv",
         "has_header": True,
-        "sample_ratio": 0.5
+        "sample_ratio": 0.3
     },
     "GlassIdentification": {
         "train_file": "glass_train.csv",
         "test_file": "glass_test.csv",
         "has_header": False,
-        "sample_ratio": 1.0
+        "sample_ratio": 0.3
     }
 }
